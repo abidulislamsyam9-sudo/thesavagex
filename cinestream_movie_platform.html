@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="bn" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineStream - সিনেমা স্ট্রিম | Stream & Discover Movies</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#E50914',
+                            dark: '#0F172A',
+                            card: '#1E293B',
+                            lightBg: '#F8FAFC',
+                            lightCard: '#FFFFFF'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Hind Siliguri', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for English & Bangla -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        /* Custom Glassmorphism */
+        .glassmorphism {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .light .glassmorphism {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        /* Hide scrollbars */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Custom modal transition */
+        .modal-animate {
+            animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-brand-dark text-slate-100 min-h-screen flex flex-col transition-colors duration-300 light:bg-slate-50 light:text-slate-900">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="sticky top-0 z-40 glassmorphism shadow-lg transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            
+            <!-- Logo -->
+            <div class="flex items-center gap-2 cursor-pointer" onclick="resetFilters()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-red-400 flex items-center justify-center shadow-lg shadow-red-600/30">
+                    <i class="fa-solid font-bold fa-play text-white text-lg ml-0.5"></i>
+                </div>
+                <div>
+                    <span class="text-2xl font-bold tracking-tight bg-gradient-to-r from-red-500 to-amber-500 bg-clip-text text-transparent">CineStream</span>
+                    <span class="text-xs block font-medium text-slate-400 dark:text-slate-400 -mt-1 light:text-slate-500">সিনেমা স্ট্রিম</span>
+                </div>
+            </div>
+
+            <!-- Search Bar (Desktop) -->
+            <div class="hidden md:flex flex-1 max-w-md relative">
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="মুভি, পরিচালক বা জেনার খুঁজুন..." 
+                    class="w-full bg-slate-800/80 light:bg-slate-100 border border-slate-700 light:border-slate-300 rounded-full py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-slate-100 light:text-slate-800 placeholder-slate-400 transition-all">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center gap-3">
+                <!-- Watchlist / Favorites Button -->
+                <button onclick="toggleWatchlistView()" id="watchlistNavBtn" class="relative bg-slate-800/80 light:bg-slate-200 hover:bg-slate-700 light:hover:bg-slate-300 text-slate-200 light:text-slate-800 p-2.5 rounded-full transition flex items-center gap-2 px-4 text-sm font-medium border border-slate-700/50 light:border-slate-300">
+                    <i class="fa-solid fa-bookmark text-red-500"></i>
+                    <span class="hidden sm:inline">ওয়াচলিস্ট</span>
+                    <span id="watchlistCount" class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+
+                <!-- Light / Dark Theme Toggle -->
+                <button onclick="toggleTheme()" class="bg-slate-800/80 light:bg-slate-200 hover:bg-slate-700 light:hover:bg-slate-300 text-amber-400 light:text-slate-700 p-2.5 rounded-full transition border border-slate-700/50 light:border-slate-300" title="থিম পরিবর্তন করুন">
+                    <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Search Bar -->
+        <div class="md:hidden px-4 pb-3">
+            <div class="relative w-full">
+                <input type="text" id="mobileSearchInput" oninput="handleSearch(true)" placeholder="মুভি খুঁজুন..." 
+                    class="w-full bg-slate-800/80 light:bg-slate-100 border border-slate-700 light:border-slate-300 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-red-500 text-slate-100 light:text-slate-800 placeholder-slate-400">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO CAROUSEL BANNER SECTION -->
+    <section class="relative w-full bg-slate-950 overflow-hidden min-h-[480px] sm:min-h-[550px] flex items-center">
+        <!-- Background Overlay Poster -->
+        <div id="heroBg" class="absolute inset-0 bg-cover bg-center transition-all duration-700 scale-105 opacity-40 blur-sm"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/60 to-transparent light:from-slate-50 light:via-slate-50/70"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/80 to-transparent light:from-slate-50 light:via-slate-50/80"></div>
+
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full z-10">
+            <div class="max-w-2xl" id="heroContent">
+                <!-- Dynamic Content Loaded via JS -->
+            </div>
+        </div>
+
+        <!-- Carousel Indicators -->
+        <div class="absolute bottom-6 right-6 z-20 flex gap-2" id="heroDots">
+            <!-- Dynamic Dots -->
+        </div>
+    </section>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+        <!-- CATEGORY & FILTER TOOLBAR -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            
+            <!-- Category Pills -->
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="categoryContainer">
+                <!-- Categories dynamically injected here -->
+            </div>
+
+            <!-- Sorting Dropdown -->
+            <div class="flex items-center justify-between gap-3 self-end md:self-auto min-w-[200px]">
+                <label for="sortSelect" class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">সাজান:</label>
+                <select id="sortSelect" onchange="handleSort()" class="bg-slate-800 light:bg-white text-slate-200 light:text-slate-800 text-sm rounded-xl px-3 py-2 border border-slate-700 light:border-slate-300 focus:outline-none focus:border-red-500 cursor-pointer w-full">
+                    <option value="popular">জনপ্রিয়তা (Popularity)</option>
+                    <option value="rating">সর্বোচ্চ রেটিং (Top Rated)</option>
+                    <option value="latest">সর্বশেষ মুক্তিপ্রাপ্ত (Latest)</option>
+                    <option value="title">শিরোনাম (A-Z)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- SECTION HEADING -->
+        <div class="flex items-center justify-between mb-6 border-b border-slate-800 light:border-slate-200 pb-3">
+            <h2 id="sectionTitle" class="text-xl sm:text-2xl font-bold flex items-center gap-2 text-slate-100 light:text-slate-800">
+                <i class="fa-solid fa-fire text-red-500"></i> সব মুভি (All Movies)
+            </h2>
+            <span id="movieCountBadge" class="text-xs bg-slate-800 light:bg-slate-200 text-slate-400 light:text-slate-600 px-3 py-1 rounded-full font-medium">
+                0টি মুভি পাওয়া গেছে
+            </span>
+        </div>
+
+        <!-- MOVIE GRID -->
+        <div id="movieGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            <!-- Dynamic Movie Cards Render Here -->
+        </div>
+
+        <!-- NO RESULTS PLACEHOLDER -->
+        <div id="noResults" class="hidden py-16 text-center">
+            <div class="w-20 h-20 bg-slate-800 light:bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-500 text-3xl">
+                <i class="fa-solid fa-film-slash"></i>
+            </div>
+            <h3 class="text-lg font-bold mb-1">কোনো মুভি পাওয়া যায়নি!</h3>
+            <p class="text-slate-400 text-sm max-w-md mx-auto mb-4">আপনার অনুসন্ধানের সাথে মিল রেখে কোনো মুভি খুঁজে পাওয়া যায়নি। অন্য কীওয়ার্ড দিয়ে চেষ্টা করুন।</p>
+            <button onclick="resetFilters()" class="bg-red-600 hover:bg-red-700 text-white text-sm px-5 py-2 rounded-xl transition">
+                সব ফিল্টার মুছুন
+            </button>
+        </div>
+    </main>
+
+    <!-- MOVIE DETAILS & TRAILER MODAL -->
+    <div id="movieModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+        <div class="relative bg-slate-900 light:bg-white text-slate-100 light:text-slate-800 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-slate-800 light:border-slate-200 modal-animate my-8 max-h-[90vh] flex flex-col">
+            
+            <!-- Modal Close Button -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-20 bg-black/60 hover:bg-red-600 text-white w-9 h-9 rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Trailer Video Wrapper -->
+            <div class="relative aspect-video w-full bg-black">
+                <iframe id="modalIframe" class="w-full h-full" src="" title="Movie Trailer" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+            <!-- Modal Content Scrollable -->
+            <div class="p-6 overflow-y-auto flex-1 space-y-6">
+                <!-- Title & Basic Info -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-1">
+                            <span id="modalYear" class="text-xs font-semibold px-2.5 py-0.5 rounded bg-slate-800 light:bg-slate-200 text-slate-300 light:text-slate-700">2023</span>
+                            <span id="modalRating" class="text-xs font-bold px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                                <i class="fa-solid fa-star text-amber-400"></i> 8.5
+                            </span>
+                            <span id="modalDuration" class="text-xs text-slate-400">2h 30m</span>
+                        </div>
+                        <h2 id="modalTitle" class="text-2xl sm:text-3xl font-bold">Movie Title</h2>
+                        <p id="modalGenres" class="text-xs text-red-500 font-medium mt-1">Action, Sci-Fi</p>
+                    </div>
+
+                    <button id="modalWatchlistBtn" onclick="" class="self-start md:self-auto bg-slate-800 light:bg-slate-200 hover:bg-red-600 light:hover:bg-red-600 hover:text-white px-5 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition">
+                        <i class="fa-solid fa-bookmark"></i> ওয়াচলিস্টে রাখুন
+                    </button>
+                </div>
+
+                <!-- Plot Summary -->
+                <div>
+                    <h4 class="text-sm font-semibold uppercase text-slate-400 mb-1">কাহিনী সংক্ষেপ (Plot Summary)</h4>
+                    <p id="modalPlot" class="text-sm text-slate-300 light:text-slate-600 leading-relaxed"></p>
+                </div>
+
+                <!-- Cast & Director -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800 light:border-slate-200">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase block">পরিচালক (Director)</span>
+                        <span id="modalDirector" class="text-sm font-medium"></span>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase block">অভিনেতা / অভিনেত্রী (Cast)</span>
+                        <span id="modalCast" class="text-sm font-medium"></span>
+                    </div>
+                </div>
+
+                <!-- REVIEWS & COMMENTS SECTION -->
+                <div class="pt-4 border-t border-slate-800 light:border-slate-200 space-y-4">
+                    <h4 class="text-md font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-comments text-red-500"></i> দর্শক মন্তব্য ও রিভিউ (Reviews)
+                    </h4>
+
+                    <!-- Add Review Form -->
+                    <form onsubmit="submitReview(event)" class="space-y-3 bg-slate-800/50 light:bg-slate-100 p-4 rounded-xl">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-medium text-slate-300 light:text-slate-700">রেটিং দিন:</label>
+                            <div class="flex gap-1 text-amber-400 text-lg cursor-pointer" id="starRatingInput">
+                                <i class="fa-regular fa-star" onclick="setRating(1)"></i>
+                                <i class="fa-regular fa-star" onclick="setRating(2)"></i>
+                                <i class="fa-regular fa-star" onclick="setRating(3)"></i>
+                                <i class="fa-regular fa-star" onclick="setRating(4)"></i>
+                                <i class="fa-regular fa-star" onclick="setRating(5)"></i>
+                            </div>
+                        </div>
+                        <input type="text" id="reviewerName" placeholder="আপনার নাম..." required class="w-full bg-slate-900 light:bg-white text-xs p-2.5 rounded-lg border border-slate-700 light:border-slate-300 focus:outline-none focus:border-red-500">
+                        <textarea id="reviewerComment" rows="2" placeholder="মুভিটি কেমন লাগলো আপনার মতামত লিখুন..." required class="w-full bg-slate-900 light:bg-white text-xs p-2.5 rounded-lg border border-slate-700 light:border-slate-300 focus:outline-none focus:border-red-500"></textarea>
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs px-4 py-2 rounded-lg font-medium transition">মন্তব্য জমা দিন</button>
+                    </form>
+
+                    <!-- Comments List -->
+                    <div id="reviewsList" class="space-y-3 max-h-48 overflow-y-auto pr-1">
+                        <!-- Dynamic Comments -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER SECTION -->
+    <footer class="bg-slate-950 text-slate-400 text-sm border-t border-slate-800 light:bg-slate-900 light:text-slate-300 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                
+                <!-- Col 1: About -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-bold text-sm">C</div>
+                        <span class="text-xl font-bold text-white tracking-wide">CineStream</span>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        CineStream হলো একটি আধুনিক বাংলা ও ইংরেজি চলচ্চিত্র প্ল্যাটফর্ম। এখানে সেরা সব মুভির ট্রেইলার, রিভিউ এবং ওয়াচলিস্ট সুবিধা পাবেন সম্পূর্ণ বিনামূল্যে।
+                    </p>
+                </div>
+
+                <!-- Col 2: Quick Links -->
+                <div>
+                    <h4 class="text-white font-semibold text-sm mb-3">দ্রুত লিঙ্ক (Quick Links)</h4>
+                    <ul class="space-y-2 text-xs">
+                        <li><a href="#" onclick="resetFilters(); return false;" class="hover:text-red-500 transition">হোম (Home)</a></li>
+                        <li><a href="#" onclick="filterByCategory('Action'); return false;" class="hover:text-red-500 transition">অ্যাকশন মুভি</a></li>
+                        <li><a href="#" onclick="filterByCategory('Sci-Fi'); return false;" class="hover:text-red-500 transition">সাই-ফাই মুভি</a></li>
+                        <li><a href="#" onclick="toggleWatchlistView(); return false;" class="hover:text-red-500 transition">আমার ওয়াচলিস্ট</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: Social Links -->
+                <div>
+                    <h4 class="text-white font-semibold text-sm mb-3">সোশ্যাল মিডিয়া</h4>
+                    <div class="flex gap-3 text-lg">
+                        <a href="#" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-red-600 hover:text-white flex items-center justify-center transition"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-red-600 hover:text-white flex items-center justify-center transition"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-red-600 hover:text-white flex items-center justify-center transition"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-red-600 hover:text-white flex items-center justify-center transition"><i class="fa-brands fa-instagram"></i></a>
+                    </div>
+                </div>
+
+                <!-- Col 4: Newsletter -->
+                <div>
+                    <h4 class="text-white font-semibold text-sm mb-3">নিউজনউজলেটার</h4>
+                    <p class="text-xs text-slate-400 mb-3">নতুন মুভির আপডেট পেতে আপনার ইমেইল সাবস্ক্রাইব করুন।</p>
+                    <form onsubmit="handleSubscribe(event)" class="flex gap-2">
+                        <input type="email" placeholder="আপনার ইমেইল..." required class="bg-slate-900 text-xs px-3 py-2 rounded-lg border border-slate-800 focus:outline-none focus:border-red-500 text-slate-200 w-full">
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs px-4 py-2 rounded-lg font-medium transition">যুক্ত হোন</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800/80 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+                <p>&copy; 2026 CineStream (সিনেমা স্ট্রিম)। সর্বস্বত্ব সংরক্ষিত।</p>
+                <div class="flex gap-4">
+                    <a href="#" class="hover:underline">প্রাইভেসি পলিসি</a>
+                    <a href="#" class="hover:underline">টার্মস অব সার্ভিস</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* -------------------------------------------------------------
+           MOVIE DATABASE (Mock JSON Data with High Resolution Posters)
+        ------------------------------------------------------------- */
+        const moviesData = [
+            {
+                id: 1,
+                title: "Oppenheimer",
+                banglaTitle: "ওপেনহাইমার",
+                year: 2023,
+                rating: 8.9,
+                duration: "3h 00m",
+                genres: ["Drama", "History"],
+                poster: "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=600&q=80",
+                heroPoster: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80",
+                plot: "দ্বিতীয় বিশ্বযুদ্ধের সময় মার্কিন বিজ্ঞানী জে. রবার্ট ওপেনহাইমারের নেতৃত্বে পারমাণবিক বোমা তৈরির গোপন প্রজেক্ট 'ম্যানহাটন প্রজেক্ট' এবং এর ঐতিহাসিক প্রভাবের গল্প।",
+                director: "Christopher Nolan",
+                cast: "Cillian Murphy, Emily Blunt, Matt Damon",
+                trailerUrl: "https://www.youtube.com/embed/uYPbbksJxIg",
+                isFeatured: true
+            },
+            {
+                id: 2,
+                title: "Interstellar",
+                banglaTitle: "ইন্টারস্টেলার",
+                year: 2014,
+                rating: 8.7,
+                duration: "2h 49m",
+                genres: ["Sci-Fi", "Drama"],
+                poster: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=600&q=80",
+                heroPoster: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80",
+                plot: "পৃথিবী যখন বসবাসের অযোগ্য হয়ে উঠছে, তখন মানবজাতির নতুন আবাসস্থলের সন্ধানে মহাকাশচারীদের একটি দল ওয়ার্মহোল দিয়ে অন্য ছায়াপথে পাড়ি জমায়।",
+                director: "Christopher Nolan",
+                cast: "Matthew McConaughey, Anne Hathaway, Jessica Chastain",
+                trailerUrl: "https://www.youtube.com/embed/zSWdZVtXT7E",
+                isFeatured: true
+            },
+            {
+                id: 3,
+                title: "The Dark Knight",
+                banglaTitle: "দ্য ডার্ক নাইট",
+                year: 2008,
+                rating: 9.0,
+                duration: "2h 32m",
+                genres: ["Action", "Drama"],
+                poster: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80",
+                heroPoster: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80",
+                plot: "গথাম সিটিকে অপরাধমুক্ত করতে ব্যাটম্যানের লড়াই। কিন্তু যখন সাইকোপ্যাথ জোকার শহরে চরম নৈরাজ্য সৃষ্টি করে, তখন ব্যাটম্যানকে তার সবচেয়ে বড় পরীক্ষার মুখোমুখি হতে হয়।",
+                director: "Christopher Nolan",
+                cast: "Christian Bale, Heath Ledger, Aaron Eckhart",
+                trailerUrl: "https://www.youtube.com/embed/EXeTwQWrcwY",
+                isFeatured: true
+            },
+            {
+                id: 4,
+                title: "Inception",
+                banglaTitle: "ইনসেপশন",
+                year: 2010,
+                rating: 8.8,
+                duration: "2h 28m",
+                genres: ["Sci-Fi", "Action"],
+                poster: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80",
+                heroPoster: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80",
+                plot: "স্বপ্নের মধ্যে প্রবেশ করে মানুষের অবচেতন মন থেকে গোপন তথ্য চুরি করার অসাধারণ প্রযুক্তির রহস্যময় গল্প।",
+                director: "Christopher Nolan",
+                cast: "Leonardo DiCaprio, Joseph Gordon-Levitt, Elliot Page",
+                trailerUrl: "https://www.youtube.com/embed/YoHD9XEInc0",
+                isFeatured: false
+            },
+            {
+                id: 5,
+                title: "Spider-Man: Across the Spider-Verse",
+                banglaTitle: "স্পাইডার-ম্যান: অ্যাক্রস দ্য স্পাইডার-ভার্স",
+                year: 2023,
+                rating: 8.7,
+                duration: "2h 20m",
+                genres: ["Animation", "Action", "Sci-Fi"],
+                poster: "https://images.unsplash.com/photo-1635805737707-575885ab0820?auto=format&fit=crop&w=600&q=80",
+                heroPoster: "https://images.unsplash.com/photo-1635805737707-575885ab0820?auto=format&fit=crop&w=1200&q=80",
+                plot: "মাইলস মোরালেস মাল্টিভার্সে যাত্রা করে এবং অন্য স্পাইডার-হিরোদের মুখোমুখি হয়। এক অভূতপূর্ব বিপদের হাত থেকে প্রিয়জনদের রক্ষা করার অ্যাডভেঞ্চার।",
+                director: "Joaquim Dos Santos, Kemp Powers",
+                cast: "Shameik Moore, Hailee Steinfeld, Oscar Isaac",
+                trailerUrl: "https://www.youtube.com/embed/cqGjhVJWtEg",
+                isFeatured: false
+            },
+            {
+                id: 6,
+                title: "The Conjuring",
+                banglaTitle: "দ্য কনজুরিং",
+                year: 2013,
+                rating: 7.5,
+                duration: "1h 52m",
+                genres: ["Horror"],
+                poster: "https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=600&q=80",
+                heroPoster: "https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=1200&q=80",
+                plot: "প্যারানরমাল বিশেষজ্ঞ এড ও লরেন ওয়ারেন এক গ্রামীণ ফার্মহাউসে এক পরিবারের ওপর হওয়া অলৌকিক এবং ভৌতিক আক্রমণের রহস্য উন্মোচনে নামেন।",
+                director: "James Wan",
+                cast: "Vera Farmiga, Patrick Wilson, Lili Taylor",
+                trailerUrl: "https://www.youtube.com/embed/k10ETZ41q5o",
+                isFeatured: false
+            },
+            {
+                id: 7,
+                title: "Dune: Part Two",
+                banglaTitle: "ডিউন: পার্ট টু",
+                year: 2024,
+                rating: 8.6,
+                duration: "2h 46m",
+                genres: ["Sci-Fi", "Action"],
+                poster: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80",
+                heroPoster: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80",
+                plot: "পল অ্যাট্রিডিস তার পরিবারের ধ্বংসের জন্য দায়ী চক্রান্তকারীদের বিরুদ্ধে প্রতিশোধ নিতে ফ্রেমেনদের সাথে একত্রিত হয়।",
+                director: "Denis Villeneuve",
+                cast: "Timothée Chalamet, Zendaya, Rebecca Ferguson",
+                trailerUrl: "https://www.youtube.com/embed/Way9Dexny3w",
+                isFeatured: false
+            },
+            {
+                id: 8,
+                title: "The Hangover",
+                banglaTitle: "দ্য হ্যাংওভার",
+                year: 2009,
+                rating: 7.7,
+                duration: "1h 40m",
+                genres: ["Comedy"],
+                poster: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80",
+                heroPoster: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1200&q=80",
+                plot: "ব্যাচেলর পার্টির পর সকালে উঠে তিন বন্ধু দেখে বর নিখোঁজ! আগের রাতের কোনো স্মৃতি ছাড়াই তারা তাদের বন্ধুকে খুঁজতে শুরু করে।",
+                director: "Todd Phillips",
+                cast: "Bradley Cooper, Zach Galifianakis, Ed Helms",
+                trailerUrl: "https://www.youtube.com/embed/tcdUhdOlz9M",
+                isFeatured: false
+            }
+        ];
+
+        const categories = ["All", "Action", "Comedy", "Drama", "Sci-Fi", "Horror", "Animation"];
+
+        /* -------------------------------------------------------------
+           STATE MANAGEMENT
+        ------------------------------------------------------------- */
+        let currentCategory = "All";
+        let searchQuery = "";
+        let sortBy = "popular";
+        let watchlist = JSON.parse(localStorage.getItem('cinestream_watchlist')) || [];
+        let reviewsData = JSON.parse(localStorage.getItem('cinestream_reviews')) || {};
+        let activeHeroIndex = 0;
+        let selectedMovieId = null;
+        let currentRatingInput = 0;
+
+        /* -------------------------------------------------------------
+           INITIALIZATION
+        ------------------------------------------------------------- */
+        window.addEventListener('DOMContentLoaded', () => {
+            initCategories();
+            renderHero();
+            renderMovies();
+            updateWatchlistCount();
+            initTheme();
+
+            // Auto cycle Hero Carousel
+            setInterval(() => {
+                const featuredMovies = moviesData.filter(m => m.isFeatured);
+                activeHeroIndex = (activeHeroIndex + 1) % featuredMovies.length;
+                renderHero();
+            }, 7000);
+        });
+
+        /* -------------------------------------------------------------
+           THEME TOGGLE
+        ------------------------------------------------------------- */
+        function initTheme() {
+            if (localStorage.getItem('cinestream_theme') === 'light') {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun text-lg';
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+                localStorage.setItem('cinestream_theme', 'light');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun text-lg';
+                showToast("লাইট থিম সক্রিয় করা হয়েছে");
+            } else {
+                document.documentElement.classList.remove('light');
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('cinestream_theme', 'dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon text-lg';
+                showToast("ডার্ক থিম সক্রিয় করা হয়েছে");
+            }
+        }
+
+        /* -------------------------------------------------------------
+           CATEGORIES RENDER
+        ------------------------------------------------------------- */
+        function initCategories() {
+            const container = document.getElementById('categoryContainer');
+            const categoryBanglaMap = {
+                "All": "সব (All)",
+                "Action": "অ্যাকশন",
+                "Comedy": "কমেডি",
+                "Drama": "ড্রামা",
+                "Sci-Fi": "সাই-ফাই",
+                "Horror": "হরর",
+                "Animation": "অ্যানিমেশন"
+            };
+
+            container.innerHTML = categories.map(cat => `
+                <button onclick="filterByCategory('${cat}')" 
+                    class="category-btn text-xs sm:text-sm font-medium px-4 py-2 rounded-full whitespace-nowrap transition-all border ${
+                        currentCategory === cat 
+                        ? 'bg-red-600 text-white border-red-600 shadow-md shadow-red-600/30' 
+                        : 'bg-slate-800/80 light:bg-slate-200 text-slate-300 light:text-slate-700 border-slate-700/50 light:border-slate-300 hover:bg-slate-700'
+                    }">
+                    ${categoryBanglaMap[cat] || cat}
+                </button>
+            `).join('');
+        }
+
+        function filterByCategory(category) {
+            currentCategory = category;
+            initCategories();
+            renderMovies();
+            
+            // Scroll smoothly to grid
+            document.getElementById('sectionTitle').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        /* -------------------------------------------------------------
+           HERO CAROUSEL RENDER
+        ------------------------------------------------------------- */
+        function renderHero() {
+            const featuredMovies = moviesData.filter(m => m.isFeatured);
+            const movie = featuredMovies[activeHeroIndex];
+
+            if (!movie) return;
+
+            document.getElementById('heroBg').style.backgroundImage = `url('${movie.heroPoster}')`;
+
+            const isBookmarked = watchlist.includes(movie.id);
+
+            const heroContent = document.getElementById('heroContent');
+            heroContent.innerHTML = `
+                <div class="inline-flex items-center gap-2 bg-red-600/90 text-white text-xs font-bold px-3 py-1 rounded-md mb-3 shadow">
+                    <i class="fa-solid fa-fire"></i> ট্রেন্ডিং নম্বর ${activeHeroIndex + 1}
+                </div>
+                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-2 leading-tight">
+                    ${movie.title} <span class="text-slate-300 font-normal text-2xl">(${movie.banglaTitle})</span>
+                </h1>
+                <div class="flex items-center gap-4 text-xs sm:text-sm text-slate-300 mb-4">
+                    <span class="flex items-center gap-1 text-amber-400 font-bold"><i class="fa-solid fa-star"></i> ${movie.rating}</span>
+                    <span>•</span>
+                    <span>${movie.year}</span>
+                    <span>•</span>
+                    <span>${movie.duration}</span>
+                    <span>•</span>
+                    <span class="text-red-400 font-medium">${movie.genres.join(', ')}</span>
+                </div>
+                <p class="text-slate-300 text-sm sm:text-base line-clamp-3 mb-6 max-w-xl leading-relaxed">
+                    ${movie.plot}
+                </p>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="openModal(${movie.id})" class="bg-red-600 hover:bg-red-700 text-white font-semibold text-sm px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg shadow-red-600/30 transition transform hover:scale-105">
+                        <i class="fa-solid fa-play"></i> ট্রেইলার দেখুন
+                    </button>
+                    <button onclick="toggleWatchlist(${movie.id})" class="bg-slate-800/80 light:bg-slate-200 hover:bg-slate-700 light:hover:bg-slate-300 text-white light:text-slate-800 font-semibold text-sm px-5 py-3 rounded-xl border border-slate-700 light:border-slate-300 flex items-center gap-2 transition">
+                        <i class="${isBookmarked ? 'fa-solid text-red-500' : 'fa-regular'} fa-bookmark"></i> 
+                        ${isBookmarked ? 'ওয়াচলিস্টে আছে' : 'ওয়াচলিস্টে যোগ করুন'}
+                    </button>
+                </div>
+            `;
+
+            // Render Dots
+            const dotsContainer = document.getElementById('heroDots');
+            dotsContainer.innerHTML = featuredMovies.map((_, idx) => `
+                <button onclick="setHeroSlide(${idx})" class="w-2.5 h-2.5 rounded-full transition-all ${idx === activeHeroIndex ? 'bg-red-600 w-8' : 'bg-slate-600/80 hover:bg-slate-400'}"></button>
+            `).join('');
+        }
+
+        function setHeroSlide(index) {
+            activeHeroIndex = index;
+            renderHero();
+        }
+
+        /* -------------------------------------------------------------
+           MOVIE GRID & FILTER LOGIC
+        ------------------------------------------------------------- */
+        function getFilteredMovies() {
+            return moviesData.filter(movie => {
+                // Category Filter
+                const matchesCategory = currentCategory === "All" || movie.genres.includes(currentCategory);
+
+                // Search Filter
+                const query = searchQuery.toLowerCase().trim();
+                const matchesSearch = movie.title.toLowerCase().includes(query) ||
+                                      movie.banglaTitle.includes(query) ||
+                                      movie.director.toLowerCase().includes(query) ||
+                                      movie.genres.some(g => g.toLowerCase().includes(query));
+
+                return matchesCategory && matchesSearch;
+            }).sort((a, b) => {
+                if (sortBy === 'rating') return b.rating - a.rating;
+                if (sortBy === 'latest') return b.year - a.year;
+                if (sortBy === 'title') return a.title.localeCompare(b.title);
+                return b.id - a.id; // Popularity / Default
+            });
+        }
+
+        function renderMovies() {
+            const filtered = getFilteredMovies();
+            const grid = document.getElementById('movieGrid');
+            const noResults = document.getElementById('noResults');
+            const countBadge = document.getElementById('movieCountBadge');
+
+            countBadge.innerText = `${filtered.length}টি মুভি পাওয়া গেছে`;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+
+            grid.innerHTML = filtered.map(movie => {
+                const isBookmarked = watchlist.includes(movie.id);
+
+                return `
+                    <div class="group bg-slate-900 light:bg-white rounded-2xl overflow-hidden border border-slate-800 light:border-slate-200 shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
+                        <!-- Poster Container -->
+                        <div class="relative aspect-[2/3] overflow-hidden bg-slate-800 cursor-pointer" onclick="openModal(${movie.id})">
+                            <img src="${movie.poster}" alt="${movie.title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            
+                            <!-- Rating Badge -->
+                            <div class="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur-md text-amber-400 text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1 border border-white/10">
+                                <i class="fa-solid fa-star text-amber-400 text-[10px]"></i> ${movie.rating}
+                            </div>
+
+                            <!-- Bookmark Quick Action -->
+                            <button onclick="event.stopPropagation(); toggleWatchlist(${movie.id});" class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md hover:bg-red-600 text-white flex items-center justify-center transition border border-white/10 shadow">
+                                <i class="${isBookmarked ? 'fa-solid text-red-500 hover:text-white' : 'fa-regular'} fa-bookmark text-xs"></i>
+                            </button>
+
+                            <!-- Hover Overlay Play Icon -->
+                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div class="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center text-lg shadow-lg transform group-hover:scale-110 transition">
+                                    <i class="fa-solid fa-play ml-0.5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Content -->
+                        <div class="p-3.5 flex-1 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                                    <span>${movie.year}</span>
+                                    <span>${movie.duration}</span>
+                                </div>
+                                <h3 class="font-bold text-sm text-slate-100 light:text-slate-800 line-clamp-1 group-hover:text-red-500 transition" title="${movie.title}">
+                                    ${movie.title}
+                                </h3>
+                                <p class="text-xs text-slate-400 light:text-slate-500 line-clamp-1 mb-2">${movie.banglaTitle}</p>
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-800 light:border-slate-100 flex items-center justify-between">
+                                <span class="text-[10px] text-red-400 font-medium">${movie.genres[0]}</span>
+                                <button onclick="openModal(${movie.id})" class="text-xs text-slate-300 light:text-slate-600 hover:text-red-500 font-medium flex items-center gap-1">
+                                    বিস্তারিত <i class="fa-solid fa-chevron-right text-[9px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /* -------------------------------------------------------------
+           SEARCH & SORT HANDLERS
+        ------------------------------------------------------------- */
+        function handleSearch(isMobile = false) {
+            const input = isMobile ? document.getElementById('mobileSearchInput') : document.getElementById('searchInput');
+            searchQuery = input.value;
+            
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (searchQuery.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            renderMovies();
+        }
+
+        function clearSearch() {
+            searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('mobileSearchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            renderMovies();
+        }
+
+        function handleSort() {
+            sortBy = document.getElementById('sortSelect').value;
+            renderMovies();
+        }
+
+        function resetFilters() {
+            currentCategory = "All";
+            searchQuery = "";
+            sortBy = "popular";
+            document.getElementById('searchInput').value = '';
+            document.getElementById('mobileSearchInput').value = '';
+            document.getElementById('sortSelect').value = 'popular';
+            initCategories();
+            renderMovies();
+            document.getElementById('sectionTitle').innerHTML = `<i class="fa-solid fa-fire text-red-500"></i> সব মুভি (All Movies)`;
+        }
+
+        /* -------------------------------------------------------------
+           WATCHLIST SYSTEM (LocalStorage)
+        ------------------------------------------------------------- */
+        function toggleWatchlist(id) {
+            const index = watchlist.indexOf(id);
+            const movie = moviesData.find(m => m.id === id);
+
+            if (index === -1) {
+                watchlist.push(id);
+                showToast(`'${movie.title}' ওয়াচলিস্টে যুক্ত করা হয়েছে`);
+            } else {
+                watchlist.splice(index, 1);
+                showToast(`'${movie.title}' ওয়াচলিস্ট থেকে সরানো হয়েছে`);
+            }
+
+            localStorage.setItem('cinestream_watchlist', JSON.stringify(watchlist));
+            updateWatchlistCount();
+            renderMovies();
+            renderHero();
+
+            // Update modal button if modal is active
+            if (selectedMovieId === id) {
+                updateModalWatchlistBtn(id);
+            }
+        }
+
+        function updateWatchlistCount() {
+            document.getElementById('watchlistCount').innerText = watchlist.length;
+        }
+
+        function toggleWatchlistView() {
+            if (watchlist.length === 0) {
+                showToast("আপনার ওয়াচলিস্ট ফাঁকা!");
+                return;
+            }
+
+            // Filter Grid to show Watchlist only
+            const grid = document.getElementById('movieGrid');
+            const filtered = moviesData.filter(m => watchlist.includes(m.id));
+            
+            document.getElementById('sectionTitle').innerHTML = `<i class="fa-solid fa-bookmark text-red-500"></i> আপনার ওয়াচলিস্ট (${watchlist.length})`;
+            document.getElementById('movieCountBadge').innerText = `${filtered.length}টি সংরক্ষিত মুভি`;
+
+            grid.innerHTML = filtered.map(movie => `
+                <div class="group bg-slate-900 light:bg-white rounded-2xl overflow-hidden border border-slate-800 light:border-slate-200 shadow-md flex flex-col justify-between">
+                    <div class="relative aspect-[2/3] overflow-hidden bg-slate-800 cursor-pointer" onclick="openModal(${movie.id})">
+                        <img src="${movie.poster}" alt="${movie.title}" class="w-full h-full object-cover">
+                        <button onclick="event.stopPropagation(); toggleWatchlist(${movie.id}); toggleWatchlistView();" class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center transition shadow">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="p-3.5">
+                        <h3 class="font-bold text-sm text-slate-100 light:text-slate-800 line-clamp-1">${movie.title}</h3>
+                        <p class="text-xs text-slate-400 line-clamp-1 mb-2">${movie.banglaTitle}</p>
+                        <button onclick="openModal(${movie.id})" class="w-full bg-slate-800 light:bg-slate-200 hover:bg-red-600 hover:text-white text-xs py-2 rounded-lg font-medium transition">
+                            ট্রেইলার দেখুন
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('sectionTitle').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        /* -------------------------------------------------------------
+           MODAL & REVIEWS LOGIC
+        ------------------------------------------------------------- */
+        function openModal(id) {
+            selectedMovieId = id;
+            const movie = moviesData.find(m => m.id === id);
+            if (!movie) return;
+
+            document.getElementById('modalTitle').innerText = `${movie.title} (${movie.banglaTitle})`;
+            document.getElementById('modalYear').innerText = movie.year;
+            document.getElementById('modalRating').innerHTML = `<i class="fa-solid fa-star text-amber-400"></i> ${movie.rating}`;
+            document.getElementById('modalDuration').innerText = movie.duration;
+            document.getElementById('modalGenres').innerText = movie.genres.join(', ');
+            document.getElementById('modalPlot').innerText = movie.plot;
+            document.getElementById('modalDirector').innerText = movie.director;
+            document.getElementById('modalCast').innerText = movie.cast;
+
+            // Embedded YouTube Trailer
+            document.getElementById('modalIframe').src = `${movie.trailerUrl}?autoplay=1`;
+
+            updateModalWatchlistBtn(id);
+            renderReviews(id);
+
+            // Show Modal
+            document.getElementById('movieModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Lock scroll
+        }
+
+        function closeModal() {
+            document.getElementById('movieModal').classList.add('hidden');
+            document.getElementById('modalIframe').src = ''; // Stop video
+            document.body.style.overflow = 'auto'; // Unlock scroll
+            selectedMovieId = null;
+        }
+
+        function updateModalWatchlistBtn(id) {
+            const isBookmarked = watchlist.includes(id);
+            const btn = document.getElementById('modalWatchlistBtn');
+            btn.onclick = () => toggleWatchlist(id);
+            btn.innerHTML = isBookmarked 
+                ? `<i class="fa-solid fa-bookmark text-red-500"></i> ওয়াচলিস্ট থেকে সরান`
+                : `<i class="fa-regular fa-bookmark"></i> ওয়াচলিস্টে রাখুন`;
+        }
+
+        /* Interactive Rating Stars */
+        function setRating(rating) {
+            currentRatingInput = rating;
+            const stars = document.getElementById('starRatingInput').children;
+            for (let i = 0; i < stars.length; i++) {
+                if (i < rating) {
+                    stars[i].className = 'fa-solid fa-star text-amber-400';
+                } else {
+                    stars[i].className = 'fa-regular fa-star text-amber-400';
+                }
+            }
+        }
+
+        /* Submit Review */
+        function submitReview(event) {
+            event.preventDefault();
+            if (!selectedMovieId) return;
+
+            const name = document.getElementById('reviewerName').value.trim();
+            const comment = document.getElementById('reviewerComment').value.trim();
+
+            if (currentRatingInput === 0) {
+                showToast("অনুগ্রহ করে একটি রেটিং নির্বাচন করুন!");
+                return;
+            }
+
+            const newReview = {
+                name: name,
+                comment: comment,
+                rating: currentRatingInput,
+                date: new Date().toLocaleDateString('bn-BD')
+            };
+
+            if (!reviewsData[selectedMovieId]) {
+                reviewsData[selectedMovieId] = [];
+            }
+
+            reviewsData[selectedMovieId].unshift(newReview);
+            localStorage.setItem('cinestream_reviews', JSON.stringify(reviewsData));
+
+            // Reset Form
+            document.getElementById('reviewerName').value = '';
+            document.getElementById('reviewerComment').value = '';
+            setRating(0);
+
+            renderReviews(selectedMovieId);
+            showToast("আপনার রিভিউ সফলভাবে যুক্ত হয়েছে!");
+        }
+
+        function renderReviews(movieId) {
+            const container = document.getElementById('reviewsList');
+            const reviews = reviewsData[movieId] || [];
+
+            if (reviews.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 italic">এখনো কোনো রিভিউ দেওয়া হয়নি। প্রথম রিভিউটি আপনিই দিন!</p>`;
+                return;
+            }
+
+            container.innerHTML = reviews.map(r => `
+                <div class="bg-slate-800/40 light:bg-slate-100 p-3 rounded-xl border border-slate-700/50 light:border-slate-200">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-200 light:text-slate-800">${r.name}</span>
+                        <div class="flex items-center text-amber-400 text-[10px]">
+                            ${Array(r.rating).fill('<i class="fa-solid fa-star"></i>').join('')}
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-300 light:text-slate-600 mb-1">${r.comment}</p>
+                    <span class="text-[9px] text-slate-500 block">${r.date}</span>
+                </div>
+            `).join('');
+        }
+
+        /* -------------------------------------------------------------
+           TOAST NOTIFICATION LOGIC
+        ------------------------------------------------------------- */
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-800 light:bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-2 pointer-events-auto modal-animate';
+            toast.innerHTML = `<i class="fa-solid fa-circle-info text-red-500"></i> ${message}`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function handleSubscribe(e) {
+            e.preventDefault();
+            showToast("ধন্যবাদ! আমাদের নিউজলেটারে সাবস্ক্রাইব করা হয়েছে।");
+            e.target.reset();
+        }
+    </script>
+</body>
+</html>
